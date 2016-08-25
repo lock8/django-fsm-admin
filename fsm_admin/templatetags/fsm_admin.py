@@ -3,6 +3,7 @@ import logging
 from django import template
 from django.contrib.admin.templatetags.admin_modify import submit_row
 from django.conf import settings
+from django.db import models
 
 register = template.Library()
 
@@ -47,7 +48,7 @@ def fsm_submit_row(context):
     original = context.get('original', None)
     model_name = ''
     if original is not None:
-        if original._deferred:
+        if original is models.DEFERRED:
             model_name = type(original).__base__._meta.verbose_name
         else:
             model_name = original.__class__._meta.verbose_name
