@@ -197,19 +197,25 @@ class FSMTransitionMixin(object):
         form = super(FSMTransitionMixin, self).get_form(request, obj,
                                                         *args, **kwargs)
         fsm_field, transition = self._get_requested_transition(request)
-        if transition:
-            form._fsm_transition = transition
+        new_state = None
+        for t in self._fsm_get_transitions(obj, request).get(fsm_field, []):
+            if t.name == transition:
+                new_state = t.target
+
+        if transition and new_state:
+            form._fsm_transition, form._fsm_new_state = transition, new_state
 
             def _full_clean(self):
                 super(type(self), self).full_clean()
-                new_state = self._fsm_transition
+                transition = self._fsm_transition
+                new_state = self._fsm_new_state
                 try:
                     validate = self.instance.validate_fsm_state_change
                 except AttributeError:
                     pass
                 else:
                     try:
-                        validate(new_state)
+                        validate(transition, new_state)
                     except ValidationError as e:
                         self._update_errors(e)
 
